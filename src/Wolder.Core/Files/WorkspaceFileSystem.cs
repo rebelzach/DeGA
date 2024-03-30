@@ -28,7 +28,7 @@ public class WorkspaceFileSystem : IWorkspaceFileSystem
 
     public string RootDirectoryPath => _lazyRootPath.Value;
 
-    public void CleanDirectory()
+    public virtual void CleanDirectory()
     {
         if (Directory.Exists(RootDirectoryPath))
         {
@@ -63,7 +63,7 @@ public class WorkspaceFileSystem : IWorkspaceFileSystem
     private string NormalizePath(string name)
     {
         name = name.Trim().TrimStart('/', '\\');
-        string filePath = Path.Combine(RootDirectoryPath, name);
+        var filePath = Path.Combine(RootDirectoryPath, name);
         var directory = Path.GetDirectoryName(filePath)!;
         Directory.CreateDirectory(directory);
         return filePath;

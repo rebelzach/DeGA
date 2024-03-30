@@ -49,6 +49,8 @@ public class GeneratorWorkspaceBuilder
         var serviceProvider = _services.BuildServiceProvider();
         var rootPathService = serviceProvider.GetRequiredService<WorkspaceRootPath>();
         rootPathService.SetRootPath(rootPath);
+        
+        serviceProvider.GetRequiredService<ISourceFiles>().CleanDirectory();
 
         await EventDispatcher.Events.WorkspaceInitializedAsync();
         var invokeMiddleware = serviceProvider.GetRequiredService<IInvoke>();
