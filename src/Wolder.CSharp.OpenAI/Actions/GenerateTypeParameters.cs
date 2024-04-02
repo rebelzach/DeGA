@@ -1,10 +1,11 @@
 ﻿using Wolder.Core.Files;
+using Wolder.Core.Memory;
 
 namespace Wolder.CSharp.OpenAI.Actions;
 
 public record GenerateTypeParameters(
-    DotNetProjectReference Project, string RelativeNamespace, string TypeName, string BehaviorPrompt, IEnumerable<FileMemoryItem>? ContextMemoryItems = null)
+    DotNetProjectReference Project, string RelativeNamespace, string TypeName, string BehaviorPrompt, IEnumerable<IMemoryItem>? ContextMemoryItems = null)
 {
-    public IEnumerable<FileMemoryItem> ContextMemoryItems { get; init; } = 
-        ContextMemoryItems ?? Enumerable.Empty<FileMemoryItem>();
+    public IEnumerable<IMemoryItem> ContextMemoryItems { get; init; } = 
+        ContextMemoryItems ?? Enumerable.Empty<IMemoryItem>();
 }

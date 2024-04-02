@@ -81,7 +81,7 @@ public class GenerateBlazorComponent(
         DotNetProjectReference project, string fileContent, CompilationResult lastResult, string context)
     {
         var (projectRef, className, behaviorPrompt) = parameters;
-        var maxAttempts = 2;
+        var maxAttempts = 3;
         for (int i = 0; i < maxAttempts; i++)
         {
             var messagesText = lastResult.Output.Errors;

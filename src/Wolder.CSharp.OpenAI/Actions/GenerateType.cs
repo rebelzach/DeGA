@@ -39,7 +39,7 @@ public class GenerateType(
         {
             context = "\nThese items may also provide helpful context:\n" + 
                       string.Join("\n", parameters.ContextMemoryItems
-                          .Select(i => $"File: {i.RelativePath}\n{i.Content}" ));
+                          .Select(i => i.ToPromptText()));
         }
 
         var namespaceEnd = string.IsNullOrEmpty(typeNamespace)
@@ -127,8 +127,9 @@ public class GenerateType(
     
     private static string Sanitize(string input)
     {
-        string pattern = @"^\s*```\s*csharp|^\s*```|^\s*```\s*html";
-        string result = Regex.Replace(input, pattern, "", RegexOptions.Multiline);
+        string pattern = @"^\s*```\s*csharp|^\s*```|^\s*```\s*html|^\s*begin:|^\s*end:";
+        string result = Regex.Replace(input, pattern, "",
+            RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
         return result;
     }
