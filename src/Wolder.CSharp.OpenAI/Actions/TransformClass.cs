@@ -8,21 +8,29 @@ using Wolder.Core.Workspace;
 
 namespace Wolder.CSharp.OpenAI.Actions;
 
-public record TransformClassParameters(DotNetProjectReference project, string filePath, string behaviorPrompt);
+public record TransformClassParameters(
+    DotNetProjectReference project, string filePath, string behaviorPrompt);
 
 public class TransformClass(
     IAIAssistant assistant,
     ILogger<TransformClass> logger,
     ISourceFiles sourceFiles,
+    CSharpGenerator csharpGenerator,
     TransformClassParameters parameters) 
     : IAction<TransformClassParameters, FileMemoryItem>
 {
     public async Task<FileMemoryItem> InvokeAsync()
     {
         var (projectRef, filePath, behaviorPrompt) = parameters;
+        filePath = Path.Combine(projectRef.RelativeRoot, filePath);
+        // Assert file exists
+        if (!sourceFiles.Exists(filePath))
+        {
+            throw new FileNotFoundException(filePath);
+        }
         var content = await sourceFiles.ReadFileAsync(filePath);
         var response = await assistant.CompletePromptAsync($"""
-            {GenerateClass.CSharpPrompt}
+            {GenerateType.CSharpPrompt}
 
             Using the code from this file:
             File: {filePath}
@@ -30,7 +38,7 @@ public class TransformClass(
             {content}
             ```
 
-            Update the code with the following behavior:
+            Update the code with the following behavior, output the entire modified file:
             {behaviorPrompt}
             
             Begin Output:
@@ -44,7 +52,12 @@ public class TransformClass(
 
         await sourceFiles.WriteFileAsync(filePath, sanitized);
 
-        return new FileMemoryItem(filePath, sanitized);
+        var result =  new FileMemoryItem(filePath, sanitized);
+
+        var resultOrFixed = await csharpGenerator.AssistedCompileAsync(
+            new(projectRef, result));
+
+        return resultOrFixed;
     }
     
     private static string Sanitize(string input)

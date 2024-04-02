@@ -22,7 +22,7 @@ public record GenerateProjectParameters(string Name, string Prompt, ProjectType 
 
 public class GenerateProject(
     IAIAssistant assistant,
-    ILogger<GenerateClass> logger,
+    ILogger<GenerateProject> logger,
     CommandLineActions commandLineActions,
     ISourceFiles sourceFiles,
     GenerateProjectParameters parameters) 
@@ -47,6 +47,7 @@ public class GenerateProject(
             $"\n> ");
         await commandLineActions.ExecuteCommandLineAsync(
             new ExecuteCommandLineParameters(commandResult));
-        return new DotNetProjectReference(parameters.Name, parameters.Name);
+        return new DotNetProjectReference(
+            Path.Join(parameters.Name, $"{parameters.Name}.csproj"), parameters.Name);
     }
 }

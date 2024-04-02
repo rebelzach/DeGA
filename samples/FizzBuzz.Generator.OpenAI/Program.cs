@@ -42,8 +42,8 @@ class GenerateFizzBuzz(
             new ExecuteCommandLineParameters(
                 $"dotnet new console -n {mainProject.Name}"));
 
-        await csharpGenerator.GenerateClassAsync(
-            new GenerateClassParameters(
+        await csharpGenerator.GenerateTypeAsync(
+            new GenerateTypeParameters(
                 mainProject,
                 "",
                 "Program",

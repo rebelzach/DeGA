@@ -8,5 +8,6 @@ public interface IWorkspaceFileSystem
     string GetAbsolutePath(string relativePath);
     Task<string> WriteFileAsync(string name, string text);
     Task<string?> ReadFileAsync(string filePath);
+    bool Exists(string relativePath);
     void CleanDirectory();
 }

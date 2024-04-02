@@ -1,46 +1,34 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Text;
+using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
 using Wolder.Core.Assistants;
 using Wolder.Core.Files;
 using Wolder.CSharp.Compilation;
 using Wolder.Core.Workspace;
+using Wolder.CSharp.OpenAI.Constants;
 
 namespace Wolder.CSharp.OpenAI.Actions;
 
-public record GenerateClassParameters(
-    DotNetProjectReference Project, string Namespace, string ClassName, string BehaviorPrompt)
+public record AssistedCompileParameters(
+    DotNetProjectReference Project, FileMemoryItem RelevantFiles)
 {
     public IEnumerable<FileMemoryItem> ContextMemoryItems { get; init; } = 
         Enumerable.Empty<FileMemoryItem>();
 }
 
-public class GenerateClass(
+public class AssistedCompile(
     IAIAssistant assistant,
-    ILogger<GenerateClass> logger,
+    ILogger<AssistedCompile> logger,
     CSharpActions csharp,
     ISourceFiles sourceFiles,
-    GenerateClassParameters parameters) 
-    : IAction<GenerateClassParameters, FileMemoryItem>
+    AssistedCompileParameters parameters) 
+    : IAction<AssistedCompileParameters, FileMemoryItem>
 {
-    public const string CSharpPrompt =
-        "You are a helpful assistant that writes C# code to complete any task specified by me. " +
-        "Your output will be directly written to a file where it will be compiled as part of a " +
-        "larger C# project. Nullable references are enabled.";
     public async Task<FileMemoryItem> InvokeAsync()
     {
-        var (project, classNamespace, className, behaviorPrompt) = parameters;
-        // Normalize the namespace to be relative to the project base namespace
-        if (classNamespace.StartsWith(project.BaseNamespace))
-        {
-            classNamespace = classNamespace.Substring(project.BaseNamespace.Length);
-        }
+        var (project, relevantFile) = parameters;
         
-        var tree = sourceFiles.GetDirectoryTree();
-        var context = $$"""
-            
-            Directory Tree:
-            {{tree}}
-            """;
+        var context = "";
         if (parameters.ContextMemoryItems.Any())
         {
             context = "\nThese items may also provide helpful context:\n" + 
@@ -48,25 +36,11 @@ public class GenerateClass(
                     .Select(i => $"File: {i.RelativePath}\n{i.Content}" ));
         }
 
-        var namespaceEnd = string.IsNullOrEmpty(classNamespace)
-            ? ""
-            : $".{classNamespace}";
-        var response = await assistant.CompletePromptAsync($"""
-            {CSharpPrompt}
-            {context}
-
-            Create a class named `{className}` with namespace `{project.BaseNamespace}{namespaceEnd}` with the following behavior:
-            {behaviorPrompt}
-            
-            Begin Output:
-            """);
-        
-        var classMemoryItem = await SanitizeAndWriteClassAsync(response);
-
         var result = await csharp.CompileProjectAsync(new(project));
         if (result is CompilationResult.Failure failure)
         {
-            var (resolutionResult, fixedMemoryItem) = await TryResolveFailedCompilationAsync(project, classMemoryItem, failure, context);
+            var (resolutionResult, fixedMemoryItem) = await TryResolveFailedCompilationAsync(
+                failure, context);
             if (resolutionResult is CompilationResult.Failure)
             {
                 throw new("Resolution failed");
@@ -77,21 +51,21 @@ public class GenerateClass(
             }
         }
 
-        return classMemoryItem;
+        return relevantFile;
     }
 
     private async Task<(CompilationResult, FileMemoryItem?)> TryResolveFailedCompilationAsync(
-        DotNetProjectReference project, FileMemoryItem lastFile, CompilationResult lastResult, string context)
+        CompilationResult lastResult, string context)
     {
-        var (projectRef, classNamespace, className, behaviorPrompt) = parameters;
-        var maxAttempts = 2;
+        var (project, lastFile) = parameters;
+        var maxAttempts = 3;
         FileMemoryItem? classMemoryItem = null;
         for (int i = 0; i < maxAttempts; i++)
         {
             var diagnosticMessages = lastResult.Output.Errors;
             var messagesText = string.Join(Environment.NewLine, diagnosticMessages);
             var response = await assistant.CompletePromptAsync($"""
-                {CSharpPrompt}
+                {Prompts.CSharpPrompt}
                 {context}
 
                 Given the following errors:
@@ -118,24 +92,35 @@ public class GenerateClass(
 
     private async Task<FileMemoryItem> SanitizeAndWriteClassAsync(string response)
     {
-        var (project, classNamespace, className, behaviorPrompt) = parameters;
-        var sanitized = Sanitize(response);
+        var (project, relevantFile) = parameters;
+        var sanitized = ExtractCodeBlocks(response);
 
         logger.LogInformation(sanitized);
 
-        var relativePath = classNamespace.Replace('.', Path.PathSeparator);
-        var path = Path.Combine(project.RelativeRoot, relativePath,  $"{className}.cs");
+        var path = relevantFile.RelativePath;
             
         await sourceFiles.WriteFileAsync(path, sanitized);
         
         return new FileMemoryItem(path, sanitized);
     }
     
-    private static string Sanitize(string input)
+    private static string ExtractCodeBlocks(string input)
     {
-        string pattern = @"^\s*```\s*csharp|^\s*```|^\s*```\s*html";
-        string result = Regex.Replace(input, pattern, "", RegexOptions.Multiline);
+        // Pattern to match code blocks, capturing the content inside the backticks
+        string pattern = @"```(?:[^`\n]*\n)?(.*?)```";
+        var matches = Regex.Matches(input, pattern, RegexOptions.Singleline);
 
-        return result;
+        // Use StringBuilder to concatenate all the code block contents
+        var result = new StringBuilder();
+        foreach (Match match in matches)
+        {
+            // Append the content of the code block to the result
+            if (match.Groups.Count > 1)
+            {
+                result.AppendLine(match.Groups[1].Value);
+            }
+        }
+
+        return result.ToString().TrimEnd(); // TrimEnd to remove the last newline added by AppendLine
     }
 }

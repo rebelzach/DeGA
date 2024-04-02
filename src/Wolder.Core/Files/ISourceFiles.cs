@@ -2,4 +2,5 @@
 
 public interface ISourceFiles : IWorkspaceFileSystem
 {
+    FileMemoryItem CreateFileMemoryItem(string relativePath);
 }

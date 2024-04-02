@@ -54,8 +54,8 @@ class GenerateTodoListApp(
                 Make sure the services are registered before the app container is built.
                 """));
 
-        var todoItem = await csharpGenerator.GenerateClassAsync(
-            new GenerateClassParameters(
+        var todoItem = await csharpGenerator.GenerateTypeAsync(
+            new GenerateTypeParameters(
                 webProject,
                 "Models",
                 "TodoItem",
@@ -67,8 +67,8 @@ class GenerateTodoListApp(
                 Notes
                 """));
         
-        var todoServiceInterface = await csharpGenerator.GenerateClassAsync(
-            new GenerateClassParameters(
+        var todoServiceInterface = await csharpGenerator.GenerateTypeAsync(
+            new GenerateTypeParameters(
                 webProject,
                 "Services",
                 "ITodoService",
@@ -83,8 +83,8 @@ class GenerateTodoListApp(
                 ContextMemoryItems = [todoItem]
             });
         
-        var todoService = await csharpGenerator.GenerateClassAsync(
-            new GenerateClassParameters(
+        var todoService = await csharpGenerator.GenerateTypeAsync(
+            new GenerateTypeParameters(
                 webProject,
                 "Services",
                 "TodoService",

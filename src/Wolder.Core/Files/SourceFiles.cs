@@ -3,6 +3,11 @@
 public class SourceFiles(WorkspaceRootPath rootPath)
     : WorkspaceFileSystem(rootPath, "src"), ISourceFiles
 {
+    public FileMemoryItem CreateFileMemoryItem(string relativePath)
+    {
+        return new FileMemoryItem(relativePath, File.ReadAllText(GetAbsolutePath(relativePath)));
+    }
+    
     public override void CleanDirectory()
     {
         var rootPath = RootDirectoryPath;
@@ -28,6 +33,16 @@ public class SourceFiles(WorkspaceRootPath rootPath)
 
         // Move the root directory to the new archive directory
         Directory.Move(rootPath, archiveDir);
+        
+        // Limit the number of archived runs to 10
+        var archivedRuns = Directory.GetDirectories(runsDir)
+            .OrderByDescending(d => d)
+            .ToArray();
+
+        for (int i = 10; i < archivedRuns.Length; i++)
+        {
+            Directory.Delete(archivedRuns[i], true);
+        }
 
         base.CleanDirectory();
     }

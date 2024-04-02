@@ -54,6 +54,11 @@ public class WorkspaceFileSystem : IWorkspaceFileSystem
         return await File.ReadAllTextAsync(filePath);
     }
 
+    public bool Exists(string relativePath)
+    {
+        return Path.Exists(GetAbsolutePath(relativePath));
+    }
+
     public string GetAbsolutePath(string relativePath)
     {
         string filePath = Path.Combine(RootDirectoryPath, relativePath);

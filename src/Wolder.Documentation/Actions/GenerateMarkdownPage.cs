@@ -1,10 +1,11 @@
 ﻿using Wolder.Core.Assistants;
 using Wolder.Core.Files;
+using Wolder.Core.Memory;
 using Wolder.Core.Workspace;
 
 namespace Wolder.Documentation.Actions;
 
-public record GenerateMarkdownPageParameters(string Path, string Prompt, params FileMemoryItem[] MemoryItems);
+public record GenerateMarkdownPageParameters(string Path, string Prompt, params IMemoryItem[] MemoryItems);
 
 public class GenerateMarkdownPage(
     ISourceFiles sourceFiles,

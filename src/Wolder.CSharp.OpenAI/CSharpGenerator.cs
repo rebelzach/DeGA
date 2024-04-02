@@ -3,11 +3,12 @@ using Wolder.CSharp.OpenAI.Actions;
 
 namespace Wolder.CSharp.OpenAI;
 
-[GenerateActionCall<GenerateClass>]
+[GenerateActionCall<GenerateType>]
 [GenerateActionCall<GenerateProject>]
 [GenerateActionCall<GenerateClasses>]
 [GenerateActionCall<GenerateBlazorComponent>]
 [GenerateActionCall<TransformClass>]
+[GenerateActionCall<AssistedCompile>]
 public partial class CSharpGenerator
 {
 }
