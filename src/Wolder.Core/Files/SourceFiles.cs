@@ -44,6 +44,6 @@ public class SourceFiles(WorkspaceRootPath rootPath)
             Directory.Delete(archivedRuns[i], true);
         }
 
-        base.CleanDirectory();
+        base.CleanDirectory(); 
     }
 }
