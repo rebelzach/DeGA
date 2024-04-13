@@ -117,7 +117,7 @@ public class GenerateType(
 
         logger.LogInformation(sanitized);
 
-        var relativePath = typeNamespace.Replace('.', Path.PathSeparator);
+        var relativePath = typeNamespace.Replace('.', Path.DirectorySeparatorChar);
         var path = Path.Combine(project.RelativeRoot, relativePath,  $"{typeName}.cs");
             
         await sourceFiles.WriteFileAsync(path, sanitized);
